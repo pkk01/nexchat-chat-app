@@ -4,9 +4,12 @@ import com.chatapp.realtimechatapp.dto.LoginRequestDTO;
 import com.chatapp.realtimechatapp.dto.LoginResponseDTO;
 import com.chatapp.realtimechatapp.dto.RegisterRequestDTO;
 import com.chatapp.realtimechatapp.dto.UserDTO;
+import com.chatapp.realtimechatapp.jwt.JwtService;
 import com.chatapp.realtimechatapp.model.User;
 import com.chatapp.realtimechatapp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +22,13 @@ public class AuthenticationService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public UserDTO signup (RegisterRequestDTO registerRequestDTO) {
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtService jwtService;
+
+    public UserDTO signup(RegisterRequestDTO registerRequestDTO) {
         if (userRepository.findByUsername(registerRequestDTO.getUsername()).isPresent()) {
             throw new RuntimeException("Username is already in use");
         }
@@ -34,9 +43,21 @@ public class AuthenticationService {
         return convertToUserDTO(user);
     }
 
-    public LoginResponseDTO login (LoginRequestDTO loginRequestDTO) {
+    public LoginResponseDTO login(LoginRequestDTO loginRequestDTO) {
 
-        return null;
+        User user = userRepository.findByUsername(loginRequestDTO.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                loginRequestDTO.getUsername(),
+                loginRequestDTO.getPassword()));
+
+        String jwtToken = jwtService.generateToken(user);
+
+        return LoginResponseDTO.builder()
+                .token(jwtToken)
+                .userDTO(convertToUserDTO(user))
+                .build();
 
     }
 

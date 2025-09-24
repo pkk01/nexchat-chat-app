@@ -35,13 +35,14 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserDTO> login (@RequestBody LoginRequestDTO loginRequestDTO) {
+    public ResponseEntity<UserDTO> login(@RequestBody LoginRequestDTO loginRequestDTO) {
         LoginResponseDTO loginResponseDTO = authenticationService.login(loginRequestDTO);
-        ResponseCookie responseCookie = ResponseCookie.from("JWT", loginResponseDTO.getToken())
+        ResponseCookie responseCookie = ResponseCookie
+                .from("JWT", loginResponseDTO.getToken())
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .maxAge(1*60*60) // 1 hour
+                .maxAge(1 * 60 * 60) // 1 hour
                 .sameSite("strict")
                 .build();
 
@@ -56,14 +57,14 @@ public class AuthController {
     }
 
 
-
     @PostMapping("/getcurrentuser")
     public ResponseEntity<?> getCurrentUser(Authentication authentication) {
         if (authentication == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not AUTHORIZED");
         }
         String username = authentication.getName();
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         return ResponseEntity.ok(convertToUserDTO(user));
 

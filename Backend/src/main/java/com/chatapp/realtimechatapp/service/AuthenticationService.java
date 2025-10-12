@@ -16,6 +16,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Service
 public class AuthenticationService {
 
@@ -87,5 +92,13 @@ public class AuthenticationService {
         userDTO.setEmail(user.getEmail());
 
         return userDTO;
+    }
+
+    public Map<String, Object> getOnlineUsers() {
+        List<User> usersList = userRepository.findByIsOnlineTrue();
+        Map<String, Object> onlineUsers = usersList
+                .stream()
+                .collect(Collectors.toMap(User::getUsername, user -> user));
+        return onlineUsers;
     }
 }

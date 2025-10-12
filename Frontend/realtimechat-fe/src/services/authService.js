@@ -182,4 +182,14 @@ export const authService = {
       throw error;
     }
   },
+
+  getOnlineUsers: async () => {
+    try {
+      const response = await api.get("/api/auth/getonlineusers");
+      return response.data;
+    } catch (error) {
+      console.error("Fetch online users error:", error);
+      throw error;
+    }
+  },
 };

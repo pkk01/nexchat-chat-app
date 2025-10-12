@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -18,7 +19,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Transactional
     @Modifying
     @Query("UPDATE User u SET u.isOnline = :isOnline WHERE u.username = :username")
-    public void updateUserOnlineStatus(@Param("username") String username, @Param("isOnline") boolean isonline);
+    public void updateUserOnlineStatus(@Param("username") String username,
+                                       @Param("isOnline") boolean isonline);
 
 
+    List<User> findByIsOnlineTrue();
 }

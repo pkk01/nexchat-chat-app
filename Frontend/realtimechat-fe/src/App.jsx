@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
-import Chat from "./pages/ChatArea.jsx";
+import ChatArea from "./pages/ChatArea.jsx";
 import Login from "./pages/Login.jsx";
 import MainPage from "./pages/MainPage.jsx";
 import Signup from "./pages/Signup.jsx";
@@ -25,7 +25,7 @@ function App() {
             path="/chatarea"
             element={
               <ProtectedRoute>
-                <Chat />
+                <ChatArea />
               </ProtectedRoute>
             }
           />

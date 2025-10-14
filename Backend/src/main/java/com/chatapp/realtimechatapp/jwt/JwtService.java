@@ -19,7 +19,7 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${jwt.sercret}")
+    @Value("${jwt.secret}")
     private String secretKey;
 
     @Value("${jwt.expiration}")
@@ -29,7 +29,8 @@ public class JwtService {
 
     public Long extractUserId(String jwtToken) {
 
-        String userIdStr = extractClaim(jwtToken, claims -> claims.get("userId", String.class));
+        String userIdStr = extractClaim(jwtToken, claims -> claims.get("userId",
+                String.class));
 
         return userIdStr != null ? Long.parseLong(userIdStr) : null;
     }

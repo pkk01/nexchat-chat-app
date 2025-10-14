@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://localhost:5050";
+const API_URL = "http://localhost:5050";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -9,39 +9,6 @@ const api = axios.create({
   },
   withCredentials: true,
 });
-
-// response interceptor to handle errors globally
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response) {
-      switch (error.response.status) {
-        case 401: // Unauthorized
-          authService.logout();
-          window.location.href = "/login";
-          break;
-        case 403: // Forbidden
-          console.error("Access forbidden:");
-          break;
-        case 404: // Resource Not Found
-          console.error("Resource not found:", error.response.data);
-          break;
-        case 500: // Internal Server Error
-          console.error("Server error:", error.response.data);
-          break;
-      }
-    } else if (error.request) {
-      console.error("Request made but didn't get the response", error.request);
-    } else {
-      console.error(
-        "Something happened in setting up the request",
-        error.message
-      );
-    }
-    return Promise.reject(error);
-  }
-);
 
 const generateUserColor = () => {
   const colors = [
@@ -62,12 +29,8 @@ const generateUserColor = () => {
 export const authService = {
   login: async (username, password) => {
     try {
-      const response = await api.post("/auth/login", {
-        username,
-        password,
-      });
+      const response = await api.post("/auth/login", { username, password });
 
-      // after successful login
       const userColor = generateUserColor();
 
       const userData = {
@@ -75,8 +38,8 @@ export const authService = {
         color: userColor,
         loginTime: new Date().toISOString(),
       };
+
       localStorage.setItem("user", JSON.stringify(userData));
-      localStorage.setItem("user", JSON.stringify(response.data));
 
       return {
         success: true,
@@ -87,8 +50,7 @@ export const authService = {
       const errorMessage =
         error.response?.data?.message ||
         "Login failed, Please check your credentials.";
-
-      throw new errorMessage();
+      throw new Error(errorMessage);
     }
   },
 
@@ -107,10 +69,8 @@ export const authService = {
     } catch (error) {
       console.error("Signup error:", error);
       const errorMessage =
-        error.response?.data?.message ||
-        "Signup failed, Please check your credentials.";
-
-      throw new errorMessage();
+        error.response?.data?.message || "Signup failed, Please retry.";
+      throw new Error(errorMessage);
     }
   },
 
@@ -133,7 +93,6 @@ export const authService = {
     } catch (error) {
       console.error("Fetch current user error:", error);
 
-      // if unauthorized, logout the user
       if (error.response && error.response.status === 401) {
         await authService.logout();
       }
@@ -172,8 +131,9 @@ export const authService = {
   fetchPrivateMessage: async (user1, user2) => {
     try {
       const response = await api.get(
-        `/api/messages/private?user1=${encodeURIComponent(user1)}
-        &user2=${encodeURIComponent(user2)}`
+        `/api/messages/private?user1=${encodeURIComponent(
+          user1
+        )}&user2=${encodeURIComponent(user2)}`
       );
 
       return response.data;
@@ -193,3 +153,32 @@ export const authService = {
     }
   },
 };
+
+// ✅ Moved interceptor after authService is defined
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      switch (error.response.status) {
+        case 401:
+          authService.logout();
+          window.location.href = "/login";
+          break;
+        case 403:
+          console.error("Access forbidden:");
+          break;
+        case 404:
+          console.error("Resource not found:", error.response.data);
+          break;
+        case 500:
+          console.error("Server error:", error.response.data);
+          break;
+      }
+    } else if (error.request) {
+      console.error("Request made but no response:", error.request);
+    } else {
+      console.error("Error in request setup:", error.message);
+    }
+    return Promise.reject(error);
+  }
+);

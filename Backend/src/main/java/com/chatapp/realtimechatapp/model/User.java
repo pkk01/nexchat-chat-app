@@ -3,10 +3,12 @@ package com.chatapp.realtimechatapp.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Setter;
 
 @Entity
 @Data
-@Table (name = "users")
+@Setter
+@Table(name = "users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,4 +25,7 @@ public class User {
 
     @Column(nullable = false, name = "is_online")
     private boolean isOnline;
+
+
 }
+

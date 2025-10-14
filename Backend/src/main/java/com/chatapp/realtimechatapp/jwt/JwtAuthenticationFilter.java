@@ -32,16 +32,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        Long userId = null;
         String jwtToken = null;
+        Long userId = null;
 
+        // ✅ 1. Get JWT from Authorization header
         String authHeader = request.getHeader("Authorization");
-
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             jwtToken = authHeader.substring(7);
         }
 
-        if (jwtToken != null) {
+        // ✅ 2. Or from cookies (if you really use cookie auth)
+        if (jwtToken == null) {
             Cookie[] cookies = request.getCookies();
             if (cookies != null) {
                 for (Cookie cookie : cookies) {
@@ -53,34 +54,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        if (jwtToken != null) {
+        // ✅ 3. If no token, skip authentication
+        if (jwtToken == null || jwtToken.trim().isEmpty()) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        userId = jwtService.extractUserId(jwtToken);
-        if (userId != null && SecurityContextHolder
-                .getContext()
-                .getAuthentication() == null) {
+        // ✅ 4. Extract user ID *safely*
+        try {
+            userId = jwtService.extractUserId(jwtToken);
+        } catch (Exception e) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-            // major change var --> User
+        // ✅ 5. Authenticate user if not already authenticated
+        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             User userDetails = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User Not Found"));
+                    .orElse(null);
 
-            if (jwtService.isTokenValid(jwtToken, userDetails)) {
-                UsernamePasswordAuthenticationToken autToken =
+            if (userDetails != null && jwtService.isTokenValid(jwtToken, userDetails)) {
+                UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
-                                userDetails, null, Collections.emptyList()
-                        );
-                autToken.setDetails(new WebAuthenticationDetailsSource()
-                        .buildDetails(request));
+                                userDetails, null, Collections.emptyList());
 
-                SecurityContextHolder.getContext().setAuthentication(autToken);
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
-        filterChain.doFilter(request, response);
-        return;
 
+        filterChain.doFilter(request, response);
     }
+
 }

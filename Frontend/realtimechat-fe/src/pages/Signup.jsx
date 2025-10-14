@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService.js";
+import "../styles/Signup.css";
 
 const Signup = () => {
   const [username, setUsername] = useState("");
@@ -56,7 +57,7 @@ const Signup = () => {
             type="email"
             placeholder="Email"
             value={email}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             className="username-input"
             maxLength={20}
             required
@@ -67,7 +68,7 @@ const Signup = () => {
             type="password"
             placeholder="Password"
             value={password}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             className="username-input"
             maxLength={20}
             required

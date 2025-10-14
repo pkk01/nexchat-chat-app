@@ -13,5 +13,8 @@ spring:
     console:
       enabled: true
 jwt:
-  secret:
-    expiration: 
+  secret: FWS@#%^&CFVBJKFGHJK%^&CVFBNGHJ%^&*FGHJ
+  expiration: 3600000 # 1 hour in milliseconds
+
+server:
+  port: 5050

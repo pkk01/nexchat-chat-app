@@ -1,9 +1,12 @@
 import { Stomp } from "@stomp/stompjs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import SockJS from "sockjs-client";
-import { authService, authService as result } from "../services/authService";
+import SockJS from "sockjs-client/dist/sockjs";
+import React from "react";    
+
+import { authService as result } from "../services/authService"; 
 import PrivateChat from "./PrivateChat";
+import "../styles/ChatArea.css";
 
 const ChatArea = () => {
   const navigate = useNavigate();
@@ -110,7 +113,7 @@ const ChatArea = () => {
           );
 
           const PrivateChat = stompClient.current.subscribe(
-            "/user/${username}/queue/private",
+            `/user/${username}/queue/private`,
             (msg) => {
               const privateMessage = JSON.parse(msg.body);
               const otherUser =
@@ -152,8 +155,8 @@ const ChatArea = () => {
             .then((data) => {
               const fetchedUsers = Object.keys(data);
               setOnlineUsers((prev) => {
-                const mergerdSet = new Set(prev);
-                fetchedUsers.forEach((user) => mergerdSet.add(user));
+                const mergedSet = new Set(prev);
+                fetchedUsers.forEach((user) => mergedSet.add(user));
                 mergedSet.add(username);
                 return mergedSet;
               });
@@ -166,8 +169,8 @@ const ChatArea = () => {
         (error) => {
           console.error("STOMP Connection error:", error);
 
-          if (!reconnectInterval) {
-            reconnectInterval = setInterval(() => {
+          if (!reconnectionInterval) {  // ✅ Fixed variable name here
+            reconnectionInterval = setInterval(() => {
               connectAndFetch();
             }, 5000);
           }
@@ -180,6 +183,7 @@ const ChatArea = () => {
       if (stompClient.current && stompClient.current.connected) {
         stompClient.current.disconnect();
       }
+
       clearTimeout(typingTimeoutRef.current);
       clearInterval(reconnectionInterval);
     };
@@ -190,14 +194,87 @@ const ChatArea = () => {
     unregisterPrivateMessageHandler,
   ]);
 
-
   const openPrivateChat = (otherUser) => {
     if (otherUser === username) return;
-    
-  }
 
+    setPrivateChats((prev) => {
+      const newChats = new Map(prev);
+      newChats.set(otherUser, true);
+      return newChats;
+    });
 
+    setUnreadMessages((prev) => {
+      const newUnread = new Map(prev);
+      newUnread.delete(otherUser);
+      return newUnread;
+    });
+  };
 
+  const closePrivateChat = (otherUser) => {
+    setPrivateChats((prev) => {
+      const newChats = new Map(prev);
+      newChats.delete(otherUser);
+      return newChats;
+    });
+    unregisterPrivateMessageHandler(otherUser);
+  };
+
+  const sendMessage = (e) => {
+    e.preventDefault();
+    if (
+      stompClient.current &&
+      stompClient.current.connected &&
+      message.trim()
+    ) {
+      const chatMessage = {
+        sender: username,
+        content: message,
+        type: "CHAT",
+        color: userColor,
+      };
+
+      stompClient.current.send(
+        "/app/chat.sendMessage",
+        {},
+        JSON.stringify(chatMessage)
+      );
+      setMessage("");
+      setShowEmojiPicker(false);
+    }
+  };
+
+  const handleTyping = (e) => {
+    setMessage(e.target.value);
+
+    if (
+      stompClient.current &&
+      stompClient.current.connected &&
+      e.target.value.trim()
+    ) {
+      stompClient.current.send(
+        "/app/chat.sendMessage",
+        {},
+        JSON.stringify({
+          sender: username,
+          type: "TYPING",
+        })
+      );
+    }
+  };
+
+  const addEmoji = (emoji) => {
+    setMessage((prev) => prev + emoji);
+    setShowEmojiPicker(false);
+  };
+
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString("en-US", {
+      timeZone: "Asia/Kolkata",
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   return (
     <div className="chat-container">
@@ -238,7 +315,7 @@ const ChatArea = () => {
 
         <div className="messages-container">
           {messages.map((msg) => (
-            <div key={msg.id} className={"message ${msg.type.toLowerCase()}"}>
+            <div key={msg.id} className={`message ${msg.type.toLowerCase()}`}>
               {msg.type === "JOIN" && (
                 <div className="system-message">
                   {msg.sender} joined the group.
@@ -253,9 +330,9 @@ const ChatArea = () => {
 
               {msg.type === "CHAT" && (
                 <div
-                  className={
-                    'chat-message ${msg.sender === username ? "own-message" : ""}'
-                  }
+                  className={`chat-message ${
+                    msg.sender === username ? "own-message" : ""
+                  }`}
                 >
                   <div className="message-info">
                     <span
@@ -313,7 +390,7 @@ const ChatArea = () => {
               type="submit"
               className="send-btn"
               disabled={!message.trim()}
-            ></button>
+            >send</button>
           </form>
         </div>
       </div>
@@ -322,7 +399,7 @@ const ChatArea = () => {
         <PrivateChat
           key={otherUser}
           currentUser={username}
-          recepientUser={otherUser}
+          recipientUser={otherUser}
           userColor={userColor}
           stompClient={stompClient}
           onClose={() => closePrivateChat(otherUser)}

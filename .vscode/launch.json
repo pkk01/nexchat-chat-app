@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Spring Boot-RealTimeChatAppApplication<RealTimeChatApp>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.chatapp.realtimechatapp.RealTimeChatAppApplication",
+      "projectName": "RealTimeChatApp",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}
